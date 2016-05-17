@@ -3,48 +3,73 @@ require 'annotate_controllers/exceptions'
 module AnnotateControllers
   class Annotator
 
-    def initialize(root, route)
-      @root = root
-      @reqs = route.fetch(:reqs)
-      @info = route.fetch(:info)
-    end
+    class << self
 
-    def annotate!
-      raise ControllerNotFound.new(controller_file_path) unless File.exists?(controller_file_path)
+      def annotate!
+        mapped_routes = routes
+        pattern = /.*\/controllers\/(.*)\_controller\./
+        controller_paths = Dir[Rails.root.join('app/controllers/**/*_controller.rb')]
 
-      File.open(controller_file_path, 'r+') do |f|
-        body = f.read
+        controller_paths.each do |path|
+          raise ControllerNotFound.new(path) unless File.exists?(path)
 
-        raise ActionNotFound.new(@reqs) unless body =~ /def #{action}\W/
+          controller_name = pattern.match(path)[-1] # ignore match for entire filename
 
-        byebug
-        new_body = body.gsub(/(?:^ (?: *#.*\n)+)?( *def #{action}\W)/, comment + "\\1")
+          lines = []
+          IO.readlines(path).each_with_index do |line, index|
+            action_name = /def\W(.*)/.match(line).try(:[], -1)
 
-        f.rewind
-        f.write(new_body)
+            if action_name && match = mapped_routes.detect{ |r|
+                r[:controller] == controller_name &&
+                r[:action] == action_name
+              }
+              # replace any comment above method
+              if lines[index - 1] =~ /\#/
+                lines[index - 1] = comment(match)
+              # otherwise, insert comment above method
+              else
+                lines << comment(match)
+              end
+            end
+
+            lines << line
+          end
+
+          File.open(path, 'w') do |file|
+            file.puts lines
+          end
+
+          puts "Annotated #{controller_name}_controller"
+        end
       end
+
+      def comment(match)
+        "\t# #{match[:prefix]} #{match[:verb]} #{trim(match[:uri])}\n"
+      end
+
+      def routes
+        mapped_routes = []
+        AnnotateControllers::Inspector.map_all_routes.each do |route|
+          r = route.split(' ')
+          contraction = r[-1].split('#') # controller, action, controlleraction...
+          mapped_routes << {
+            prefix: r.size > 3 ? r.try(:[], 0) : nil,
+            verb: r.size > 3 ? r[1] : r[0],
+            uri: r.size > 3 ? r[2] : r[1],
+            controller: contraction.first,
+            action: contraction.last
+          }
+        end
+        mapped_routes
+      end
+
+      # Removes (.:format) from URI pattern string
+      def trim(string)
+        string.slice! '(.:format)'
+        string
+      end
+
     end
 
-    def comment
-      [ *@info.map {|i| i.join(' ')} ].map {|c| "  # " + trim(c) }.join("\n") + "\n"
-    end
-
-    def controller_file_path
-      @root.join("app/controllers/#{controller}_controller.rb")
-    end
-
-    def controller
-      @controller ||= @reqs.split('#').first
-    end
-
-    def action
-      @action ||= @reqs.split('#').last
-    end
-
-    # Removes (.:format) from URI pattern string
-    def trim(string)
-      string.slice! '(.:format)'
-      string
-    end
   end
 end

@@ -8,7 +8,13 @@ module AnnotateControllers
       def map_all_routes
         all_routes = Rails.application.routes.routes
         inspector = ActionDispatch::Routing::RoutesInspector.new(all_routes)
-        inspector.format(ActionDispatch::Routing::ConsoleFormatter.new).split("\n")
+        remove_constraints(
+          inspector.format(ActionDispatch::Routing::ConsoleFormatter.new).split("\n").drop(1)
+        )
+      end
+
+      def remove_constraints(routes)
+        routes.each{|r| r.slice!(/ \{(.*)}/) }
       end
 
     end
