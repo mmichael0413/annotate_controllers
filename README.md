@@ -35,7 +35,7 @@ Annotate Rails controllers with routes information.
     
     end
 
-**Note: This tool assumes you are using Rails standards for folder structures (e.g. /app/controllers) as well as naming conventions (snake\_case) for your controllers.** For example, if you have a class `HomeController`, your filename should be `home_controller.rb` as opposed to "HomeController.rb". This isn't Javascript :stuck\_out\_tongue\_winking\_eye:
+**Note: This tool assumes you are using Rails standards for folder structures (e.g. /app/controllers) as well as naming conventions (snake\_case) for your controllers.** For example, if you have a class `HomeController`, your filename should be `home_controller.rb` as opposed to `HomeController.rb`. This isn't Javascript :stuck\_out\_tongue\_winking\_eye:
 
 ## Installation
 

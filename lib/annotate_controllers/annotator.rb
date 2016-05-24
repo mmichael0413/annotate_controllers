@@ -5,7 +5,10 @@ module AnnotateControllers
 
     class << self
 
+      VERBS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']
+
       def annotate!
+        rake_output = []
         mapped_routes = routes
         pattern = /.*\/controllers\/(.*)\_controller\./
         controller_paths = Dir[Rails.root.join('app/controllers/**/*_controller.rb')]
@@ -13,9 +16,11 @@ module AnnotateControllers
         controller_paths.each do |path|
           raise ControllerNotFound.new(path) unless File.exists?(path)
 
-          controller_name = pattern.match(path)[-1] # ignore match for entire filename
-
           lines = []
+          prefixes = []
+          controller_name = pattern.match(path)[-1] # ignore match for entire filename
+          original_file_digest = Digest::SHA1.hexdigest(File.read(path))
+
           IO.readlines(path).each_with_index do |line, index|
             action_name = /def\W(.*)/.match(line).try(:[], -1)
 
@@ -23,12 +28,15 @@ module AnnotateControllers
                 r[:controller] == controller_name &&
                 r[:action] == action_name
               }
-              # replace any comment above method
-              if lines[index - 1] =~ /\#/
-                lines[index - 1] = comment(match)
-              # otherwise, insert comment above method
+              # add matched line to global array to reuse prefixes
+              prefixes << { action: action_name, prefix: match[:prefix] }
+              # replace existing annotation (if exists)
+              if overwrite_self?(match[:verb], lines[-1])
+                lines[-1] = comment(prefixes, match)
+              # otherwise, insert comment
               else
-                lines << comment(match)
+                lines << comment(prefixes, match)
+                index += 1
               end
             end
 
@@ -39,12 +47,49 @@ module AnnotateControllers
             file.puts lines
           end
 
-          puts "Annotated #{controller_name}_controller"
+          new_file_digest = Digest::SHA1.hexdigest(File.read(path))
+          rake_output << "Annotated #{controller_name}_controller" unless original_file_digest == new_file_digest
+        end
+
+        puts rake_output.any? ? rake_output : 'Nothing annotated'
+      end
+
+      def comment(prefixes, match)
+        "\t# #{match[:verb]} #{trim(match[:uri])}"\
+        "#{prefix_or_shared(prefixes, match[:verb], match[:prefix], match[:action])}\n"
+      end
+
+      def prefix_or_shared(prefixes, verb, prefix, action)
+        if prefix.present?
+          ' (' + prefix + '_path)'
+        else
+          shared_prefix(prefixes, verb, action)
         end
       end
 
-      def comment(match)
-        "\t# #{match[:prefix]} #{match[:verb]} #{trim(match[:uri])}\n"
+      def shared_prefix(prefixes, verb, action)
+        if VERBS.include? verb
+          ' (' +
+          prefixes.detect{ |l| l[:action] == shared_action_prefix(action) }.try(:[], :prefix) +
+          '_path)'
+        else
+          ''
+        end
+      end
+
+      def shared_action_prefix(action)
+        case action
+        when 'create'
+          'index'
+        when 'update'
+          'show'
+        when 'destroy'
+          'show'
+        end
+      end
+
+      def overwrite_self?(verb, line)
+        "# #{verb}" == /(\#\s\w*)/.match(line).try(:[], 0)
       end
 
       def routes
