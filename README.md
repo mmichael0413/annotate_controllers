@@ -1,4 +1,4 @@
-# AnnotateControllers
+# Annotate Controllers
 
 Annotate Rails controllers with routes information.
 
@@ -71,3 +71,10 @@ If you are not using a VCS (like Git, Subversion or similar), then you should co
 3. Commit your changes (`git commit -m 'Add some feature'`)
 4. Push to the branch (`git push origin my_dope_new_feature`)
 5. Create a new Pull Request
+
+
+## TODOs
+
+- Handle multi-route annotations (e.g. root & named path, PATCH & PUT)
+- TESTS!
+- Considering modularizing the `annotate!` method a bit more. At 43 lines, it's a bit much.

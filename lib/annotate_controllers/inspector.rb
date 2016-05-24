@@ -14,7 +14,7 @@ module AnnotateControllers
       end
 
       def remove_constraints(routes)
-        routes.each{|r| r.slice!(/ \{(.*)}/) }
+        routes.each{ |r| r.slice!(/ \{(.*)}/) }
       end
 
     end

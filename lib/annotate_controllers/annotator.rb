@@ -1,4 +1,4 @@
-require 'annotate_controllers/exceptions'
+require 'annotate_controllers/errors'
 
 module AnnotateControllers
   class Annotator
@@ -21,22 +21,20 @@ module AnnotateControllers
           controller_name = pattern.match(path)[-1] # ignore match for entire filename
           original_file_digest = Digest::SHA1.hexdigest(File.read(path))
 
-          IO.readlines(path).each_with_index do |line, index|
+          IO.readlines(path).each do |line|
             action_name = /def\W(.*)/.match(line).try(:[], -1)
 
-            if action_name && match = mapped_routes.detect{ |r|
-                r[:controller] == controller_name &&
-                r[:action] == action_name
-              }
-              # add matched line to global array to reuse prefixes
-              prefixes << { action: action_name, prefix: match[:prefix] }
-              # replace existing annotation (if exists)
-              if overwrite_self?(match[:verb], lines[-1])
-                lines[-1] = comment(prefixes, match)
-              # otherwise, insert comment
-              else
-                lines << comment(prefixes, match)
-                index += 1
+            if action_name && matches = select_routes_from_method(mapped_routes, controller_name, action_name)
+              matches.each do |match|
+                # add matched line to global array in order to reuse prefixes
+                prefixes << { action: action_name, prefix: match[:prefix] }
+                # replace existing annotation (if exists)
+                if overwrite_self?(match[:verb], lines[-1])
+                  lines[-1] = comment(prefixes, match)
+                # otherwise, insert comment
+                else
+                  lines << comment(prefixes, match)
+                end
               end
             end
 
@@ -52,6 +50,13 @@ module AnnotateControllers
         end
 
         puts rake_output.any? ? rake_output : 'Nothing annotated'
+      end
+
+      def select_routes_from_method(routes, controller, action)
+        results = routes.select{ |r|
+          r[:controller] == controller && r[:action] == action
+        }
+        results.any? ? results : nil
       end
 
       def comment(prefixes, match)
