@@ -1,5 +1,9 @@
 # Annotate Controllers
 
+[![Gem Version](https://badge.fury.io/rb/annotate_controllers.svg)](https://badge.fury.io/rb/annotate_controllers)
+[![Dependency Status](https://gemnasium.com/badges/github.com/mmichael0413/annotate_controllers.svg)](https://gemnasium.com/github.com/mmichael0413/annotate_controllers)
+[![Code Climate](https://codeclimate.com/github/mmichael0413/annotate_controllers/badges/gpa.svg)](https://codeclimate.com/github/mmichael0413/annotate_controllers)
+
 Annotate Rails controllers with routes information.
 
     class PagesController < ApplicationController
@@ -75,6 +79,6 @@ If you are not using a VCS (like Git, Subversion or similar), then you should co
 
 ## TODOs
 
-- Handle multi-route annotations (e.g. root & named path, PATCH & PUT)
+- Handle multi-route annotations (e.g. root & named path)
 - TESTS!
-- Considering modularizing the `annotate!` method a bit more. At 43 lines, it's a bit much.
+- Consider modularizing and cleaning up the `annotate!` method a bit more.

@@ -14,7 +14,7 @@ module AnnotateControllers
         controller_paths = Dir[Rails.root.join('app/controllers/**/*_controller.rb')]
 
         controller_paths.each do |path|
-          raise ControllerNotFound.new(path) unless File.exists?(path)
+          raise ControllerNotFound.new(path) unless File.exist?(path)
 
           lines = []
           prefixes = []
