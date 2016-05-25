@@ -28,13 +28,7 @@ module AnnotateControllers
               matches.each do |match|
                 # add matched line to global array in order to reuse prefixes
                 prefixes << { action: action_name, prefix: match[:prefix] }
-                # replace existing annotation (if exists)
-                if overwrite_self?(match[:verb], lines[-1])
-                  lines[-1] = comment(prefixes, match)
-                # otherwise, insert comment
-                else
-                  lines << comment(prefixes, match)
-                end
+                lines << comment(prefixes, match) unless exists?(match, lines)
               end
             end
 
@@ -93,8 +87,10 @@ module AnnotateControllers
         end
       end
 
-      def overwrite_self?(verb, line)
-        "# #{verb}" == /(\#\s\w*)/.match(line).try(:[], 0)
+      def exists?(match, lines)
+        lines.find{ |line|
+          trim("# #{match[:verb]} #{match[:uri]}") == /#\s\w*\s([^\s]+)/.match(line).try(:[], 0)
+        }
       end
 
       def routes
