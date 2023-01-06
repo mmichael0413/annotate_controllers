@@ -60,20 +60,22 @@ module AnnotateControllers
 
       def prefix_or_shared(prefixes, verb, prefix, action)
         if prefix.present?
-          ' (' + prefix + '_path)'
+          " (#{prefix}_path)"
         else
           shared_prefix(prefixes, verb, action)
         end
       end
 
       def shared_prefix(prefixes, verb, action)
-        if VERBS.include? verb
-          ' (' +
-          prefixes.detect{ |l| l[:action] == shared_action_prefix(action) }.try(:[], :prefix) +
-          '_path)'
-        else
-          ''
-        end
+        return '' unless VERBS.include? verb
+
+        prefix = prefixes.detect { |l|
+          l[:action] == shared_action_prefix(action)
+        }.try(:[], :prefix)
+
+        return '' unless prefix
+
+        " (#{prefix}_path)"
       end
 
       def shared_action_prefix(action)
