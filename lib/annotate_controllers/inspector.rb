@@ -9,7 +9,7 @@ module AnnotateControllers
         all_routes = Rails.application.routes.routes
         inspector = ActionDispatch::Routing::RoutesInspector.new(all_routes)
         remove_constraints(
-          inspector.format(ActionDispatch::Routing::ConsoleFormatter.new).split("\n").drop(1)
+          inspector.format(ActionDispatch::Routing::ConsoleFormatter::Sheet.new).split("\n").drop(1)
         )
       end
 
