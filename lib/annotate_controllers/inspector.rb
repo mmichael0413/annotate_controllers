@@ -8,7 +8,7 @@ module AnnotateControllers
         inspector = ActionDispatch::Routing::RoutesInspector.new(all_routes)
         formatter = ActionDispatch::Routing::ConsoleFormatter::Sheet.new
         routes = inspector.format(formatter).split("\n").drop(1)
-        remove_constraints(routes)
+        remove_constraints(routes).reject(&:empty?)
       end
 
       def remove_constraints(routes)
